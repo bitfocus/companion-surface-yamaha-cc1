@@ -1,0 +1,21 @@
+# Yamaha CC121MK2 (CC1) — Companion surface module
+#
+# Two things on Linux that do not exist on macOS or Windows:
+#
+#  1. ModemManager probes any new /dev/ttyACM* with AT commands. This firmware
+#     goes unresponsive if written to incorrectly, so it must be told to keep off.
+#  2. /dev/ttyACM* is root:dialout mode 660, so a Companion running as a service
+#     user cannot open it unless that user is in dialout (or udev grants access).
+#
+# Install:
+#   sudo cp 99-yamaha-cc1.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#   then UNPLUG AND REPLUG the CC1 (rules apply at device add)
+
+# Keep ModemManager away from it (both the USB device and the tty it creates).
+SUBSYSTEM=="usb", ATTR{idVendor}=="0499", ATTR{idProduct}=="140f", ENV{ID_MM_DEVICE_IGNORE}="1"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0499", ATTRS{idProduct}=="140f", ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_PORT_IGNORE}="1"
+
+# Make it openable: dialout group, plus uaccess for a logged-in desktop user,
+# and a stable /dev/cc1 symlink for diagnostics.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0499", ATTRS{idProduct}=="140f", GROUP="dialout", MODE="0660", TAG+="uaccess", SYMLINK+="cc1"

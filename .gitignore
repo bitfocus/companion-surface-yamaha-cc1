@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tgz
+.DS_Store
+
+# SMB/AppleDouble metadata from network shares
+.*00030000*

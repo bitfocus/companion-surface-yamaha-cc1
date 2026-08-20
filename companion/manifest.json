@@ -1,0 +1,41 @@
+{
+	"type": "surface",
+	"id": "yamaha-cc1",
+	"name": "Yamaha CC121MK2",
+	"shortname": "CC1",
+	"description": "Yamaha CC121MK2 control surface \u2014 12-key LCD, 6 push-encoders, 17 buttons and a motorised fader, over its USB CDC serial interface. No Yamaha ControlCenter or Stream Deck software required.",
+	"version": "0.4.0",
+	"license": "MIT",
+	"repository": "https://github.com/hadphild/companion-surface-yamaha-cc1",
+	"bugs": "https://github.com/hadphild/companion-surface-yamaha-cc1/issues",
+	"maintainers": [
+		{
+			"name": "Phil Hadfield",
+			"email": "phil@atov.co.uk"
+		}
+	],
+	"runtime": {
+		"type": "node22",
+		"apiVersion": "1.3.0",
+		"entrypoint": "../dist/main.js"
+	},
+	"products": [
+		"CC121MK2"
+	],
+	"keywords": [
+		"yamaha",
+		"cc121",
+		"fader",
+		"encoder",
+		"serial"
+	],
+	"usbIds": [
+		{
+			"vendorId": 1177,
+			"productIds": [
+				5135
+			]
+		}
+	],
+	"helpPath": "HELP.md"
+}
