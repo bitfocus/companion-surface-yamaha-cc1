@@ -76,13 +76,14 @@ Otherwise: **Variables → Custom Variables → +** and add `cc1_fader` by hand.
 ### Driving the motor
 
 Put an expression in **Motor fader target** and the motor follows it whenever the value
-changes. For example, to make the fader mirror a Panasonic camera's iris:
+changes. Any expression that yields 0-100 works — a variable from another connection,
+or a custom variable you set from a trigger:
 
 ```
-$(PTZ_4:irisPositionPct)
+$(custom:desk_level)
 ```
 
-Switch cameras and the fader physically moves to that camera's iris. The module ignores
+The fader physically moves to match whenever that value changes. The module ignores
 motor commands while you are touching the fader, so it never fights your hand.
 
 To drive the motor from a button instead, have the button set a custom variable and
@@ -91,12 +92,13 @@ point **Motor fader target** at it — that is what the test page's `SET 0` / `-
 
 ### A worked pair
 
-For a fader that controls a camera's iris *and* re-syncs when you change camera:
+For a fader that controls a level *and* re-syncs when the thing it controls changes
+underneath it:
 
-- **Fader position** → `cc1_fader`, with a trigger on that variable sending an iris
-  action to the selected camera.
-- **Motor fader target** → the selected camera's `irisPositionPct`, so the fader snaps
-  to the real iris whenever the camera changes.
+- **Fader position** → `cc1_fader`, with a trigger on that variable sending the level to
+  wherever it belongs.
+- **Motor fader target** → the level as that device reports it, so the fader snaps to
+  the real value whenever it changes elsewhere.
 
 Point the two fields at **different** things in real use. Aiming both at `cc1_fader`
 creates a loop — the fader writes the variable, the variable drives the motor back to

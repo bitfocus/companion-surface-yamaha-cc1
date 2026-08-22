@@ -105,8 +105,8 @@ With only the bare handshake sent and no position command, the **motorized fader
 parks itself at 0** — push it up, release, it slides back down. This is normal:
 the motor is *actively held* by `FaderPositionControlReq`; ControlCenter sends one
 right after the handshake. So position-hold is **our** responsibility:
-- after handshake (and on every camera switch) send `FaderPositionControlReq` with
-  the target iris % so the motor holds there;
+- after the handshake (and whenever the target value changes) send
+  `FaderPositionControlReq` so the motor holds that position;
 - while the fader touch bit = 1, stop driving the motor (let the user move it),
   then re-assert the held value on release.
 Upside: this confirms the motor is live and obeying us. Decoding the
@@ -123,8 +123,8 @@ The nonzero flag is what distinguishes a position SET from a FaderStatusReq quer
 (query = all-zero data). Verified live: `build_fader_position(pos)` sweeps the real
 motor top/mid/bottom on command with **no Yamaha software**. Codec: `cc1_proto.build_fader_position`.
 Note the byte order differs from the device->host fader NOTIFY (`[00][pos_lo][pos_hi][touch]`).
-Practical use in the driver: on connect + on every camera switch, send the target
-iris%; stop sending while the fader touch bit=1; re-assert on release. This is the
+Practical use: send the target position on connect and whenever it changes; stop
+sending while the fader touch bit = 1; re-assert on release. This is the
 fix for the "fader falls to 0" (ControlCenter only ever sent pos=0 in our capture).
 
 ## BUTTON LEDs — DECODED + VERIFIED LIVE (2026-07-01)
@@ -206,7 +206,7 @@ run_mac.command / run_windows.bat / run_linux.sh bootstrap a venv + deps. Verifi
 (double-click -> venv setup -> connected -> 12 keys painted). README in driver/.
 STILL TODO: LED colour from Companion per-key COLOR (set_panel_led is a stub — needs the
 LED-id<->button correlation pass); jog wheel (WheelNotify); optional PyInstaller/CI
-standalone binaries (no-Python) for all 3 OSes; fader<->iris camera integration.
+standalone binaries (no-Python) for all 3 OSes; motorised fader integration.
 1. Bring the CC1 **back to the Mac**, quit ControlCenter, and **replay the handshake**
    (`cc1_proto.HANDSHAKE`) to `/dev/cu.usbmodem*` — confirm the device wakes + streams.
 2. Move a few controls; decode the **input notifies** (Switch/Encoder/Volume/Wheel/Fader)
@@ -233,5 +233,5 @@ libusb 1.0.30 (brew), pyusb, pyserial 3.5. Capture helper: `tools/re/cc1_serial_
 - Jog wheel: no separate Wheel message on the wire — fast spins send multi-tick encoder
   deltas (seen up to ±4) on the normal 0x0002 opcode.
 - Button label map re-verified by guided press pass: cc1_proto.py PANEL_BUTTON_LABELS is
-  correct on all 17 buttons; the cc1_satellite.py cam-select comments (sid4="22", sid5="21")
+  correct on all 17 buttons; some older code comments (sid4="22", sid5="21")
   were stale — those sids are buttons 24 and 23.
