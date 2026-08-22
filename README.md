@@ -69,41 +69,53 @@ Otherwise: **Variables → Custom Variables → +** and add `cc1_fader` by hand.
 ### Reading the fader
 
 1. Set **Fader position** to `cc1_fader`.
-2. Move the fader. `cc1_fader` tracks 0–100 — watch it on the Custom Variables page, or
+2. Move the fader. `cc1_fader` tracks 0-100 — watch it on the Custom Variables page, or
    on the test page's `FADER` readout.
 3. Use it anywhere: a trigger on that variable, a button's text, an action's value.
+
+**Example — ride an OBS audio source.** Add a trigger that fires when `cc1_fader`
+changes, with the OBS action **Set Source Volume**. That action wants decibels
+(-100 to 26), so map the fader's 0-100 onto a useful range with an expression:
+
+```
+$(custom:cc1_fader) * 0.6 - 60
+```
+
+Bottom of the fader is -60 dB, top is 0 dB. Widen or narrow the range by changing the
+two numbers.
 
 ### Driving the motor
 
 Put an expression in **Motor fader target** and the motor follows it whenever the value
-changes. Any expression that yields 0-100 works — a variable from another connection,
-or a custom variable you set from a trigger:
+changes. Anything that yields 0-100 works — most usefully a custom variable that
+something else sets:
 
 ```
-$(custom:desk_level)
+$(custom:cc1_fader)
 ```
 
-The fader physically moves to match whenever that value changes. The module ignores
-motor commands while you are touching the fader, so it never fights your hand.
+The module ignores motor commands while you are touching the fader, so it never fights
+your hand. To drive the motor from a button, have the button set that variable — which
+is exactly what the test page's `SET 0` / `-10` / `+10` buttons do.
 
-To drive the motor from a button instead, have the button set a custom variable and
-point **Motor fader target** at it — that is what the test page's `SET 0` / `-10` /
-`+10` buttons do.
+Note that a value with units cannot drive the motor directly: OBS reports volume as
+`-6.5 dB`, for instance, so it needs converting to 0-100 first — usually by having the
+trigger that moves the level also write the 0-100 figure into a custom variable, and
+pointing **Motor fader target** at that.
 
 ### A worked pair
 
-For a fader that controls a level *and* re-syncs when the thing it controls changes
-underneath it:
+For a fader that rides a level *and* re-syncs when that level changes elsewhere:
 
-- **Fader position** → `cc1_fader`, with a trigger on that variable sending the level to
-  wherever it belongs.
-- **Motor fader target** → the level as that device reports it, so the fader snaps to
-  the real value whenever it changes elsewhere.
+- **Fader position** → `cc1_fader`, with a trigger sending the level onward (the OBS
+  example above).
+- **Motor fader target** → a custom variable holding the level as it currently stands,
+  updated whenever something else changes it.
 
-Point the two fields at **different** things in real use. Aiming both at `cc1_fader`
-creates a loop — the fader writes the variable, the variable drives the motor back to
-where the fader already is. Harmless, but pointless. (On the test page it is deliberate:
-it demonstrates both directions with one variable.)
+Point the two fields at **different** variables in real use. Aiming both at `cc1_fader`
+creates a loop — the fader writes it, and it drives the motor back to where the fader
+already is. Harmless, but pointless. (On the test page that loop is deliberate: it
+demonstrates both directions with one variable.)
 
 ## Testing an install
 

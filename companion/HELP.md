@@ -42,9 +42,14 @@ Otherwise add it by hand under **Variables → Custom Variables**.
 Then:
 
 1. **Fader position** → `cc1_fader`. Move the fader and it tracks 0–100.
-2. **Motor fader target** → an expression to follow, for example a level reported by
-   another connection, or `$(custom:desk_level)`. The fader physically moves to match.
+2. **Motor fader target** → an expression, 0-100, for the motor to follow — most
+   usefully a custom variable something else sets. The fader physically moves to match.
    Leave it empty if nothing should drive the motor.
+
+**Example — ride an OBS audio source.** Bind **Fader position** to `cc1_fader`, then add
+a trigger on that variable running the OBS action **Set Source Volume**. That action
+takes decibels (-100 to 26), so convert the fader's 0-100 with an expression such as
+`$(custom:cc1_fader) * 0.6 - 60` — bottom of the fader is -60 dB, top is 0 dB.
 
 The motor is ignored while you are touching the fader, so it never fights your hand.
 
