@@ -6,8 +6,8 @@
 	"description": "Yamaha CC121MK2 control surface \u2014 12-key LCD, 6 push-encoders, 17 buttons and a motorised fader, over its USB CDC serial interface. No Yamaha ControlCenter or Stream Deck software required.",
 	"version": "0.4.0",
 	"license": "MIT",
-	"repository": "https://github.com/hadphild/companion-surface-yamaha-cc1",
-	"bugs": "https://github.com/hadphild/companion-surface-yamaha-cc1/issues",
+	"repository": "https://github.com/bitfocus/companion-surface-yamaha-cc1",
+	"bugs": "https://github.com/bitfocus/companion-surface-yamaha-cc1/issues",
 	"maintainers": [
 		{
 			"name": "Phil Hadfield",

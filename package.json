@@ -19,10 +19,10 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/hadphild/companion-surface-yamaha-cc1.git"
+		"url": "git+https://github.com/bitfocus/companion-surface-yamaha-cc1.git"
 	},
 	"bugs": {
-		"url": "https://github.com/hadphild/companion-surface-yamaha-cc1/issues"
+		"url": "https://github.com/bitfocus/companion-surface-yamaha-cc1/issues"
 	},
 	"author": "Phil Hadfield"
 }
