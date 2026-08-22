@@ -64,10 +64,22 @@ touched — but it achieves nothing.)
 ## Testing an install
 
 [`docs/CC1-Surface-Test-Page.companionconfig`](docs/CC1-Surface-Test-Page.companionconfig)
-is an importable page that exercises the whole surface at once: the 12 LCD keys in
-distinct colours and labelled with their key numbers, RC1-RC6 across row 3, and one cell
-per button coloured so every LED that exists lights up. Import it (Import/Export ->
-Import), send the surface to that page, and anything mismapped is obvious at a glance.
+is an importable page that exercises the whole surface at once. Import it
+(Import/Export -> Import) and send the surface to that page; anything mismapped is
+obvious at a glance.
+
+- **LCD rows 0-1** — eight distinct colours, labelled with their key numbers.
+- **LCD row 2** — the fader test strip: `SET 0`, `-10`, `+10`, and a live readout of
+  the `cc1_fader` custom variable. The buttons create that variable if it does not
+  exist, so no setup is needed first.
+- **Row 3** — RC1-RC6.
+- **Rows 4-6** — one cell per button, coloured so every LED that exists lights up.
+
+To watch the motor move, set **Motor fader target** to `$(custom:cc1_fader)` in the
+surface settings — then `-10` / `+10` drive the fader and the readout follows. Set
+**Fader position** to the same variable and moving the fader by hand updates the readout
+too. (Pointing both at one variable is a loop, which is exactly what you want for a
+test but not in a real setup — see the fader section above.)
 
 ## LEDs
 
