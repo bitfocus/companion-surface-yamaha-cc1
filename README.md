@@ -43,23 +43,65 @@ Two things that don't apply on macOS or Windows — see [`linux/`](linux/):
 | 4–6 | the 17 buttons, in the order printed on the panel |
 | 6/5 | the fader — touching it is a press |
 
-## The fader
+## Setting up the fader
 
-Companion surface modules cannot publish their own variables; the only channel is
-"hand this value to a custom variable you nominate". So the fader needs a one-time
-setup, and **the custom variable must exist first** — the surface settings dropdown
-only lists existing ones and cannot create them.
+The fader carries a value in each direction, and each needs its own field in
+**Surfaces → Yamaha CC121MK2 → settings**:
 
-1. **Variables → Custom Variables** → create e.g. `cc1_fader`.
-2. **Surfaces → Yamaha CC121MK2 → settings**:
-   - **Fader position** → pick `cc1_fader`. Moving the fader now writes 0–100 into it.
-   - **Motor fader target** → an expression the motor should follow, e.g. a camera's
-     iris level. Leave empty if nothing should drive the motor.
+| Field | Direction | Meaning |
+|---|---|---|
+| **Fader position** | fader → Companion | writes the fader's position, 0–100, into a custom variable |
+| **Motor fader target** | Companion → fader | an expression the motor drives to, 0–100 |
 
-Point these two at *different* things. Aiming both at `cc1_fader` makes a loop: the
-fader writes the variable and the variable drives the motor back to where the fader
-already is. (It won't fight your hand — motor moves are ignored while the fader is
-touched — but it achieves nothing.)
+A surface module cannot publish variables of its own — the only channel Companion gives
+it is "hand this value to a custom variable you nominate". **That variable has to exist
+before you can pick it**: the dropdown lists existing custom variables and cannot create
+one. If it shows nothing but `None`, that is why, and it is the most common reason the
+fader appears to do nothing at all.
+
+### Quickest route
+
+Import [the test page](docs/CC1-Surface-Test-Page.companionconfig) and press its `+10`
+button once. That creates `cc1_fader` for you, and it then appears in the dropdown.
+
+Otherwise: **Variables → Custom Variables → +** and add `cc1_fader` by hand.
+
+### Reading the fader
+
+1. Set **Fader position** to `cc1_fader`.
+2. Move the fader. `cc1_fader` tracks 0–100 — watch it on the Custom Variables page, or
+   on the test page's `FADER` readout.
+3. Use it anywhere: a trigger on that variable, a button's text, an action's value.
+
+### Driving the motor
+
+Put an expression in **Motor fader target** and the motor follows it whenever the value
+changes. For example, to make the fader mirror a Panasonic camera's iris:
+
+```
+$(PTZ_4:irisPositionPct)
+```
+
+Switch cameras and the fader physically moves to that camera's iris. The module ignores
+motor commands while you are touching the fader, so it never fights your hand.
+
+To drive the motor from a button instead, have the button set a custom variable and
+point **Motor fader target** at it — that is what the test page's `SET 0` / `-10` /
+`+10` buttons do.
+
+### A worked pair
+
+For a fader that controls a camera's iris *and* re-syncs when you change camera:
+
+- **Fader position** → `cc1_fader`, with a trigger on that variable sending an iris
+  action to the selected camera.
+- **Motor fader target** → the selected camera's `irisPositionPct`, so the fader snaps
+  to the real iris whenever the camera changes.
+
+Point the two fields at **different** things in real use. Aiming both at `cc1_fader`
+creates a loop — the fader writes the variable, the variable drives the motor back to
+where the fader already is. Harmless, but pointless. (On the test page it is deliberate:
+it demonstrates both directions with one variable.)
 
 ## Testing an install
 

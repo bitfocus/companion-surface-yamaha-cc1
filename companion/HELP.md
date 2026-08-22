@@ -21,24 +21,36 @@ The screen lights, clears, and starts drawing your current page within a second 
 | **4–6** | the 17 push buttons. |
 | **6/5** | the fader. Touching it counts as a button press. |
 
-## The fader
+## Setting up the fader
 
-The fader needs a one-time setup, because a surface can only pass values to a
-**custom variable that already exists**.
+The fader carries a value in each direction, and each has its own field in
+**Surfaces → Yamaha CC121MK2 → settings**:
 
-1. **Variables → Custom Variables** → create one, e.g. `cc1_fader`.
-2. **Surfaces → Yamaha CC121MK2 → settings**:
-   - **Fader position** → select `cc1_fader`. Moving the fader writes 0–100 into it.
-   - **Motor fader target** → an expression the motor should follow, such as a camera's
-     iris percentage. Leave it empty if nothing should drive the motor.
+- **Fader position** — fader → Companion. Writes the fader position, 0–100, into a
+  custom variable.
+- **Motor fader target** — Companion → fader. An expression, 0–100, that the motor
+  drives to.
 
-If the *Fader position* dropdown shows only "None", you have no custom variables yet —
-create one first. That is the usual reason the fader appears to do nothing.
+**The custom variable must already exist before you can pick it.** The dropdown lists
+existing custom variables and cannot create one, so if it offers nothing but `None`,
+that is why — and it is the usual reason the fader seems to do nothing.
 
-Point the two fields at **different** things. Aiming both at the same variable creates a
-loop: the fader writes it, and it drives the motor back to where the fader already is.
-The motor is ignored while you are touching the fader, so it will not fight your hand,
-but it achieves nothing.
+**Quickest route:** import the surface test page that ships with this module and press
+its `+10` button once. That creates `cc1_fader`, which then appears in the dropdown.
+Otherwise add it by hand under **Variables → Custom Variables**.
+
+Then:
+
+1. **Fader position** → `cc1_fader`. Move the fader and it tracks 0–100.
+2. **Motor fader target** → an expression to follow, for example a camera's iris
+   percentage such as `$(PTZ_4:irisPositionPct)`. The fader physically moves to match.
+   Leave it empty if nothing should drive the motor.
+
+The motor is ignored while you are touching the fader, so it never fights your hand.
+
+Point the two fields at **different** things in normal use. Aiming both at the same
+variable is a loop: the fader writes it, and it drives the motor back to where the fader
+already is. (The test page does this deliberately, to show both directions at once.)
 
 ## Button lights
 
