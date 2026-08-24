@@ -148,24 +148,30 @@ A near-black cell leaves the LED off.
 
 ## Development
 
+This repository uses **yarn** (Companion's module tooling requires it — an
+`npm` lockfile fails the upstream CI checks).
+
 ```sh
-npm install
-npx tsc                      # build to dist/
-npx tsx src/cc1-proto.test.ts   # codec self-check, anchored on captured bytes
-npx tsx src/main.test.ts        # layout and host-contract self-check
-bash tools/pack.sh           # build an importable .tgz (never tar it by hand — see below)
+corepack enable              # yarn 4, per packageManager in package.json
+yarn install
+yarn build                   # tsc -> dist/
+yarn test                    # codec + layout self-checks
+yarn package                 # importable .tgz via companion-surface-build
+yarn check                   # companion-surface-check
 ```
 
-`tools/` also holds the hardware rigs used to map the device: `hw-test.mjs` (full
-5-phase check), `led-remap.mjs` (rebuild the LED map), `led-colour.mjs` (identify a
-colour value), `press-pass.mjs` (log button ids), `parse_usbpcap.py` (decode a USB
-capture).
+`yarn package` bundles the module with esbuild and installs serialport into the output
+as an external — see `build-config.cjs` for why it cannot be bundled.
 
-**Always package with `tools/pack.sh`.** macOS `tar` writes an AppleDouble sidecar for
-every file, including `._package` at the archive root; Companion extracts with
-`strip: 1`, that name becomes empty, and the import dies with `EISDIR`. Worse, macOS
-`tar -tzf` hides those entries, so a bad archive lists as clean — verify with Python's
-`tarfile` if you ever need to check by hand.
+`tools/` holds the hardware rigs used to map the device: `hw-test.mjs` (full 5-phase
+check), `led-remap.mjs` (rebuild the LED map), `led-colour.mjs` (identify a colour
+value), `press-pass.mjs` (log button ids), `harness.mjs` (full lifecycle against real
+hardware), `listen.mjs` (raw input listener), `parse_usbpcap.py` (decode a USB capture).
+
+Use `yarn package` rather than tarring the folder by hand: macOS `tar` writes an
+AppleDouble sidecar for every file, including `._package` at the archive root, and
+Companion extracts with `strip: 1` — that name becomes empty and the import dies with
+`EISDIR`. macOS `tar -tzf` hides those entries, so a broken archive lists as clean.
 
 ## Notes on the hardware
 

@@ -1,8 +1,17 @@
 node_modules/
 dist/
 
-# Upstream does not commit a lockfile for modules
+# Bitfocus modules use yarn; a npm lockfile fails their CI
 package-lock.json
+
+# yarn (nodeLinker: node-modules, so yarn.lock IS committed)
+.yarn/*
+!.yarn/patches
+.pnp.*
+
+# output of `yarn package`
+pkg/
+pkg.tgz
 *.tgz
 .DS_Store
 
