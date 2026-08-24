@@ -1,5 +1,8 @@
 node_modules/
 dist/
+
+# Upstream does not commit a lockfile for modules
+package-lock.json
 *.tgz
 .DS_Store
 

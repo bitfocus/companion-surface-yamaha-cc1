@@ -23,14 +23,15 @@ npm run build
 
 echo "staging..."
 mkdir -p "$STAGE/package"
-cp package.json package-lock.json LICENSE README.md "$STAGE/package/"
+cp package.json LICENSE README.md "$STAGE/package/"
 cp -R companion dist "$STAGE/package/"
 
-# Production deps only, resolved from the lockfile so the package is reproducible.
+# Production deps only. Upstream does not commit a lockfile, so this resolves from
+# package.json — pin ranges there if a build ever needs to be byte-reproducible.
 # --ignore-scripts is safe here: serialport resolves its prebuilt binding at runtime via
 # node-gyp-build, so nothing needs compiling at install time.
 echo "installing production dependencies..."
-(cd "$STAGE/package" && npm ci --omit=dev --ignore-scripts >/dev/null)
+(cd "$STAGE/package" && npm install --omit=dev --ignore-scripts --no-package-lock >/dev/null 2>&1)
 
 # Belt and braces: drop any macOS metadata already on disk, and stop bsdtar creating more
 # (COPYFILE_DISABLE is what makes macOS tar leave the resource forks out).
