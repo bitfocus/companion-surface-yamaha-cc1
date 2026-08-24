@@ -124,12 +124,15 @@ is an importable page that exercises the whole surface at once. Import it
 (Import/Export -> Import) and send the surface to that page; anything mismapped is
 obvious at a glance.
 
-- **LCD rows 0-1** — eight distinct colours, labelled with their key numbers.
-- **LCD row 2** — the fader test strip: `SET 0`, `-10`, `+10`, and a live readout of
-  the `cc1_fader` custom variable. The buttons create that variable if it does not
-  exist, so no setup is needed first.
+- **LCD row 0** — four colours on the screen itself, as a display reference.
+- **LCD rows 1-2** — the fader strip: `0%`, `25%`, `50%`, `75%`, `100%`, plus `-10` /
+  `+10` nudges and a live readout of the `cc1_fader` custom variable. Those buttons
+  create the variable if it does not exist, so no setup is needed first.
 - **Row 3** — RC1-RC6.
-- **Rows 4-6** — one cell per button, coloured so every LED that exists lights up.
+- **Rows 4-6** — one cell per button, each set to a different colour from the device
+  palette and labelled with it, so every one of the ten colours appears and a wrong LED
+  is obvious. The two cells marked `no LED` are the pair beside the screen, which have
+  no LED in hardware.
 
 To watch the motor move, set **Motor fader target** to `$(custom:cc1_fader)` in the
 surface settings — then `-10` / `+10` drive the fader and the readout follows. Set

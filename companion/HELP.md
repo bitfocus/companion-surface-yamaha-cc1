@@ -36,7 +36,7 @@ existing custom variables and cannot create one, so if it offers nothing but `No
 that is why — and it is the usual reason the fader seems to do nothing.
 
 **Quickest route:** import the surface test page that ships with this module and press
-its `+10` button once. That creates `cc1_fader`, which then appears in the dropdown.
+any of its fader buttons (`0%` to `100%`) once. That creates `cc1_fader`, which then appears in the dropdown.
 Otherwise add it by hand under **Variables → Custom Variables**.
 
 Then:
