@@ -62,10 +62,10 @@ already is. (The test page does this deliberately, to show both directions at on
 15 of the 17 buttons have an LED. The pair beside the screen has none — that is the
 hardware, not a fault.
 
-LEDs follow the colour of the Companion button, snapped to the nine the device can
-show: blue, orange, yellow, purple, light blue, pink, red, green and white. A button
-that is nearly black leaves its LED off. Brightness is normalised, so a dark red button
-still lights red.
+LEDs follow the colour of the Companion button, snapped to the nearest of the ten the
+device can show: blue, orange, yellow, purple, sky blue, pink, red, green, yellow-green
+and white. Brightness is ignored when matching, so a dark red button still lights red,
+and a button that is nearly black leaves its LED off.
 
 ## Page navigation
 

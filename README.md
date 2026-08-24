@@ -140,9 +140,11 @@ test but not in a real setup — see the fader section above.)
 ## LEDs
 
 15 of the 17 buttons have an LED; the pair beside the screen has none in hardware.
-They light in the colour of the Companion cell, snapped to the device's palette —
-blue, orange, yellow, purple, light blue, pink, red, green, white. A near-black cell
-leaves the LED off, and brightness is normalised so a dim red cell still lights red.
+They light in the colour of the Companion cell, snapped to the nearest of the ten the
+device can show: blue, orange, yellow, purple, sky blue, pink, red, green, yellow-green
+and white. Matching ignores brightness, so a dim red cell still lights red, and it uses a
+perceptual distance rather than raw RGB — a cyan cell picks sky blue rather than green.
+A near-black cell leaves the LED off.
 
 ## Development
 

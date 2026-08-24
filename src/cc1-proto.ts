@@ -149,50 +149,62 @@ export function buildFaderPosition(pos: number, routing = 1, seq = 0, flag = 0x0
 	return buildMessage(0x0004, Buffer.from([0x00, flag, p & 0xff, (p >> 8) & 0x03]), routing, seq)
 }
 
-// --- button LEDs (host->device) — opcode DECODED from the 2026-08-19 ControlCenter
-// USBPcap capture, ids MAPPED live the same day (tools/led-remap.mjs: light one LED,
-// user presses whichever button lit). The old 0x0180 guess from the firmware string
-// table ACKed but never lit anything.
-// data = [led_id][colour][state], state 1=on 0=off. The LEDs are multi-colour: colour
-// 0x01 is amber/orange (confirmed on hardware), and sending [id][id] sets colour=id,
-// which is why an early sweep showed each LED a different colour. Colours above ~0x09
-// appear invalid, so [id][id] silently fails for ids >= 0x0a — send both forms (see
-// CC1Surface.#setLed). Exhaustively verified 2026-08-19: exactly 15 LEDs exist, ids
-// 0x00..0x0e, covering the 15 buttons the map calls 15-29. Lighting all 256 ids at
-// once lights those 15 and nothing more.
-// The two buttons WITHOUT an LED are switch 33 and 34 — the pair beside the screen,
-// printed "1"/"2" on the button map. Physically, the R, W and D-shaped keys ARE lit:
-// they are switch 8 (led 0x0e), switch 6 (led 0x0d) and switch 3 (led 0x0a), verified
-// by pressing them while lit. Do not confuse the printed labels with the key legends. There are exactly 15 LEDs, ids 0x00..0x0e — the
-// same 15 ControlCenter enumerates in its 0x0281 brightness frame at init. Buttons
-// R and W (switch 33/34) are NOT in that set and cannot be lit by the host.
-// Verified led->button (2026-08-19, post-firmware): 00=20 01=19 02=18 03=15 04=25
-// 05=17 06=16 07=29 08=28 09=27 0a=26 0b=24 0c=23 0d=22 0e=21.
+// --- button LEDs (host->device) ---
+// Opcode DECODED from the 2026-08-19 ControlCenter USBPcap capture; ids and colours
+// MAPPED live on hardware (tools/led-remap.mjs lights one LED and the user presses
+// whichever button lit; tools/led-colour.mjs names a colour value). The earlier 0x0180
+// guess, taken from the firmware string table, ACKed every frame but never lit anything.
+//
+//   data = [led_id][colour][state]      state 1 = on, 0 = off
+//
+// 15 LEDs exist, ids 0x00..0x0e — the same 15 ControlCenter enumerates in its 0x0281
+// brightness frame at init. Lighting all 256 ids at once lights those 15 and nothing
+// more. Colours are 0..9 (see LED_COLOURS); 10 and above leave the LED dark, which is
+// why an early sweep sending [id][id] — colour = id — found nothing for ids >= 0x0a.
+//
+// led -> button, using the numbering on the project's button map:
+//   00=20 01=19 02=18 03=15 04=25 05=17 06=16 07=29 08=28 09=27 0a=26 0b=24 0c=23
+//   0d=22 0e=21
+//
+// The only two buttons with no LED are switch 33 and 34, the pair beside the screen
+// printed "1"/"2". Note that those printed numbers are NOT the legends on the keycaps:
+// the R, W and D-shaped keys do light, and are switch 8 (0x0e), 6 (0x0d) and 3 (0x0a).
 export const OP_LED = 0x0381
 export const LED_COUNT = 15
 
 /**
- * The LED palette, named on hardware 2026-08-19 by lighting each value in turn.
- * Valid values are 0..9; 10 and above leave the LED dark, which is why an early
- * sweep sending [id][id] found nothing for ids >= 0x0a. Value 8 repeats yellow.
+ * The LED palette, named on hardware 2026-08-22 by lighting each value in turn and
+ * having the panel read out. Values 0..9 are valid; 10 and above leave the LED dark,
+ * which is why an early sweep sending [id][id] found nothing for ids >= 0x0a.
+ *
+ * The rgb values are approximations of what each looks like on the panel — they exist
+ * only so ledColourFor can pick a nearest match, and are the thing to adjust if a
+ * Companion colour maps to a shade you would not have chosen.
  */
 export const LED_COLOURS: ReadonlyArray<{ value: number; name: string; rgb: [number, number, number] }> = [
 	{ value: 0, name: 'blue', rgb: [0, 0, 255] },
-	{ value: 1, name: 'orange', rgb: [255, 128, 0] },
+	{ value: 1, name: 'orange', rgb: [255, 120, 0] },
 	{ value: 2, name: 'yellow', rgb: [255, 255, 0] },
-	{ value: 3, name: 'purple', rgb: [140, 0, 255] },
-	{ value: 4, name: 'light blue', rgb: [0, 200, 255] },
-	{ value: 5, name: 'pink', rgb: [255, 0, 190] },
+	{ value: 3, name: 'purple', rgb: [150, 0, 255] },
+	{ value: 4, name: 'sky blue', rgb: [110, 190, 255] },
+	{ value: 5, name: 'pink', rgb: [255, 80, 170] },
 	{ value: 6, name: 'red', rgb: [255, 0, 0] },
 	{ value: 7, name: 'green', rgb: [0, 255, 0] },
+	{ value: 8, name: 'yellow-green', rgb: [170, 255, 0] },
 	{ value: 9, name: 'white', rgb: [255, 255, 255] },
 ]
 
 /**
  * Nearest palette colour for an arbitrary RGB, or null if the colour reads as off.
  *
- * Brightness is normalised away before matching, so a dim red cell still picks red
- * rather than collapsing towards black — the LED has no brightness of its own here.
+ * Two wrinkles, both there to make the match look right rather than merely be
+ * arithmetically closest:
+ *
+ * - Brightness is normalised away first, so a dim red cell picks red instead of
+ *   collapsing towards black. The LED has no brightness control of its own.
+ * - Distance is the "redmean" weighting rather than plain RGB distance, which is
+ *   closer to how the eye judges similarity — plain distance is happy to call a
+ *   saturated cyan "green".
  */
 export function ledColourFor(r: number, g: number, b: number): number | null {
 	const max = Math.max(r, g, b)
@@ -202,7 +214,11 @@ export function ledColourFor(r: number, g: number, b: number): number | null {
 	let best = LED_COLOURS[0]
 	let bestDist = Infinity
 	for (const c of LED_COLOURS) {
-		const d = (R - c.rgb[0]) ** 2 + (G - c.rgb[1]) ** 2 + (B - c.rgb[2]) ** 2
+		const rMean = (R + c.rgb[0]) / 2
+		const dR = R - c.rgb[0]
+		const dG = G - c.rgb[1]
+		const dB = B - c.rgb[2]
+		const d = (2 + rMean / 256) * dR * dR + 4 * dG * dG + (2 + (255 - rMean) / 256) * dB * dB
 		if (d < bestDist) {
 			bestDist = d
 			best = c
@@ -211,11 +227,6 @@ export function ledColourFor(r: number, g: number, b: number): number | null {
 	return best.value
 }
 
-/**
- * Light or clear one LED. `colour` must be a valid colour index — sending the led id
- * there (the original guess) silently fails for ids >= 0x0a, which is what hid the
- * LEDs for buttons 23, 24 and 26 through two correlation passes.
- */
 export function buildLed(ledId: number, on: boolean | number = true, routing = 1, seq = 0, colour = 0x01): Buffer {
 	return buildMessage(OP_LED, Buffer.from([ledId & 0xff, colour & 0xff, on ? 1 : 0]), routing, seq)
 }

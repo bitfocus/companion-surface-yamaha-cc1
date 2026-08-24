@@ -7,7 +7,7 @@ import {
 	HANDSHAKE, buildMessage, parseMessage, pcpWrap, pcpUnwrap, frameEncode, frameSplit,
 	decodeInput, buildFaderPosition, buildLed, buildLcdTile, rgb565,
 	lcdKeySwitchId, lcdSwitchIdToKey, lcdKeyRect, panelSwitchToKey, panelEncoderToKey,
-	buildInitSequence, buildLcdCommit, ledColourFor,
+	buildInitSequence, buildLcdCommit, ledColourFor, LED_COLOURS,
 	OP_SWITCH, OP_ENCODER, OP_FADER, OP_LCD,
 } from './cc1-proto.js'
 
@@ -60,19 +60,24 @@ assert.deepEqual(pcpUnwrap(frameSplit(buildLed(0x02, false)).frames[0]).payload.
 // the LED silently stays dark — that bug hid three LEDs through two correlation runs.
 assert.equal(pcpUnwrap(frameSplit(buildLed(0x0c, true)).frames[0]).payload[7], 0x01, 'high ids still get a valid colour')
 
-// 7b. Colour matching — palette named on hardware; values >= 10 are dark, so the
-// matcher must only ever return a valid one.
+// 7b. Colour matching — palette named on hardware; values >= 10 leave the LED dark, so
+// the matcher must only ever return one of the ten valid values.
 assert.equal(ledColourFor(255, 0, 0), 6, 'red')
 assert.equal(ledColourFor(0, 255, 0), 7, 'green')
 assert.equal(ledColourFor(0, 0, 255), 0, 'blue')
 assert.equal(ledColourFor(255, 255, 255), 9, 'white')
 assert.equal(ledColourFor(255, 255, 0), 2, 'yellow')
+assert.equal(ledColourFor(128, 255, 0), 8, 'lime picks yellow-green, not yellow')
+assert.equal(ledColourFor(0, 255, 255), 4, 'cyan picks sky blue')
 assert.equal(ledColourFor(0, 0, 0), null, 'black leaves the LED off')
 assert.equal(ledColourFor(64, 0, 0), 6, 'a dim red is still red, not off')
-for (const c of [[12, 34, 56], [200, 30, 90], [1, 250, 100]]) {
+assert.equal(ledColourFor(120, 120, 120), 9, 'grey reads as white')
+for (const c of [[12, 34, 56], [200, 30, 90], [1, 250, 100], [255, 200, 40]]) {
 	const v = ledColourFor(c[0], c[1], c[2])
-	assert.ok(v !== null && v <= 9 && v !== 8, `colour ${v} is in the valid range`)
+	assert.ok(v !== null && v >= 0 && v <= 9, `colour ${v} is a valid palette value`)
 }
+assert.equal(LED_COLOURS.length, 10, 'ten colours, values 0..9')
+assert.deepEqual(LED_COLOURS.map((c) => c.value), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 'contiguous values')
 
 // 8. LCD key grid: verified press order was top row 21,24,27,30 (column-major ids).
 assert.deepEqual([0, 1, 2, 3].map((c) => lcdKeySwitchId(0, c)), [21, 24, 27, 30], 'top row switch ids')
