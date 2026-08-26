@@ -26,8 +26,10 @@ The screen lights, clears, and starts drawing your current page within a second 
 The fader carries a value in each direction, and each has its own field in
 **Surfaces → Yamaha CC121MK2 → settings**:
 
-- **Fader position** — fader → Companion. Writes the fader position, 0–100, into a
-  custom variable.
+- **Fader position** — fader → Companion. Writes the fader position into a custom
+  variable as 0–100 to one decimal place. The fader is 10-bit, so that decimal is real
+  resolution — 1001 positions, not 101. Round it in your expression if you want
+  coarser steps.
 - **Motor fader target** — Companion → fader. An expression, 0–100, that the motor
   drives to.
 

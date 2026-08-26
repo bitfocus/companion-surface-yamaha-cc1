@@ -134,7 +134,9 @@ export function decodeInput(m: CC1Message): CC1Input | null {
 	if (op === OP_SWITCH && d.length >= 2) return { type: 'switch', id: d[0], pressed: d[1] !== 0 }
 	if (op === OP_ENCODER && d.length >= 2) return { type: 'encoder', id: d[0], delta: d[1] > 127 ? d[1] - 256 : d[1] }
 	if (op === OP_FADER && d.length >= 4)
-		return { type: 'fader', position: d[1] | (d[2] << 8), touched: (d[3] & 0x80) !== 0 }
+		// 10-bit position: the high byte carries only 2 significant bits. Mask so a stray
+		// flag in the upper bits could never inflate the reading.
+		return { type: 'fader', position: (d[1] | (d[2] << 8)) & FADER_MAX, touched: (d[3] & 0x80) !== 0 }
 	return null
 }
 

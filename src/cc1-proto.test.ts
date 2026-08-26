@@ -47,6 +47,11 @@ assert.deepEqual(enc, { type: 'encoder', id: 3, delta: -1 }, 'CCW decodes as -1'
 const fad = decodeInput({ routing: 0x8001, seq: 0, opcode: OP_FADER | 0x8000, data: Buffer.from([0x00, 0xff, 0x03, 0x80]) })
 assert.deepEqual(fad, { type: 'fader', position: 1023, touched: true }, 'fader at max, touched')
 
+// 5b. The fader is 10-bit: full scale must decode as 1023, and the high byte's spare
+// bits must not leak into the reading.
+assert.equal(decodeInput({ routing: 0x8001, seq: 0, opcode: OP_FADER | 0x8000, data: Buffer.from([0x00, 0xff, 0xff, 0x00]) })!.position, 1023, 'upper bits masked to 10 bits')
+assert.equal(decodeInput({ routing: 0x8001, seq: 0, opcode: OP_FADER | 0x8000, data: Buffer.from([0x00, 0x00, 0x02, 0x00]) })!.position, 512, 'mid scale')
+
 // 6. Motor fader layout is [00][flag][lo][hi] — the [00][lo][hi][x] variant was wrong.
 const fpos = pcpUnwrap(frameSplit(buildFaderPosition(1023)).frames[0]).payload
 assert.deepEqual(fpos.subarray(6), Buffer.from([0x00, 0x01, 0xff, 0x03]), 'FaderPositionControlReq data layout')

@@ -556,7 +556,10 @@ class CC1Surface implements SurfaceInstance {
 			if (event.touched) this.#context.keyDownById(FADER_CONTROL_ID)
 			else this.#context.keyUpById(FADER_CONTROL_ID)
 		}
-		this.#context.sendVariableValue('faderPosition', Math.round((event.position / FADER_MAX) * 100))
+		// Report to one decimal place. The fader is 10-bit (1024 positions), so rounding to
+		// a whole percent would throw away most of it — 101 steps, barely 7 bits. One
+		// decimal gives 1001 steps, which is the hardware's resolution to within a count.
+		this.#context.sendVariableValue('faderPosition', Math.round((event.position / FADER_MAX) * 1000) / 10)
 	}
 }
 
@@ -631,8 +634,8 @@ const plugin: SurfacePlugin<CC1Info> = {
 				brightness: true,
 				surfaceLayout: buildLayout(),
 				transferVariables: [
-					{ id: 'faderPosition', type: 'input', name: 'Fader position', description: 'Fader position, 0-100' },
-					{ id: 'faderMotor', type: 'output', name: 'Motor fader target', description: 'Expression (0-100) driving the motorised fader' },
+					{ id: 'faderPosition', type: 'input', name: 'Fader position', description: 'Fader position, 0-100 in 0.1 steps (the fader is 10-bit)' },
+					{ id: 'faderMotor', type: 'output', name: 'Motor fader target', description: 'Expression (0-100, decimals allowed) driving the motorised fader' },
 				],
 				// Only the LCD keys have a display, so pincode entry lives there.
 				pincodeMap: {

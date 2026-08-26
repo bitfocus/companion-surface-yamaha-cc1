@@ -50,7 +50,7 @@ The fader carries a value in each direction, and each needs its own field in
 
 | Field | Direction | Meaning |
 |---|---|---|
-| **Fader position** | fader → Companion | writes the fader's position, 0–100, into a custom variable |
+| **Fader position** | fader → Companion | writes the fader's position into a custom variable, 0–100 in 0.1 steps |
 | **Motor fader target** | Companion → fader | an expression the motor drives to, 0–100 |
 
 A surface module cannot publish variables of its own — the only channel Companion gives
@@ -71,6 +71,10 @@ Otherwise: **Variables → Custom Variables → +** and add `cc1_fader` by hand.
 1. Set **Fader position** to `cc1_fader`.
 2. Move the fader. `cc1_fader` tracks 0-100 — watch it on the Custom Variables page, or
    on the test page's `FADER` readout.
+
+The fader is 10-bit, so the value is reported to one decimal place: 1001 distinct
+positions rather than the 101 a whole percent would give. Round it in your expression
+if you want coarser steps.
 3. Use it anywhere: a trigger on that variable, a button's text, an action's value.
 
 **Example — ride an OBS audio source.** Add a trigger that fires when `cc1_fader`
