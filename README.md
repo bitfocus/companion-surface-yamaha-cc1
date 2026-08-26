@@ -144,6 +144,23 @@ surface settings — then `-10` / `+10` drive the fader and the readout follows.
 too. (Pointing both at one variable is a loop, which is exactly what you want for a
 test but not in a real setup — see the fader section above.)
 
+### Checking fader positions
+
+[`docs/CC1-Fader-Positions.companionconfig`](docs/CC1-Fader-Positions.companionconfig) is
+a second page devoted to the fader:
+
+- **LCD keys** — jump to 0%, 10% … 100%, with a live readout in the last key.
+- **Row 4** — step down by 1000, 100, 10 and 1 raw counts, plus `MIN` and `MAX`.
+- **Row 5** — the common fractions: 12.5, 25, 33, 50, 66 and 75%.
+- **Row 6** — step up by the same raw counts, plus `MID`.
+
+A raw count is one of the fader's 1024 positions, ~0.098%. The `1 cnt` buttons are the
+quickest way to confirm the 10-bit resolution really reaches Companion: each press moves
+the motor by the smallest step the hardware has.
+
+Bind **Motor fader target** to `$(custom:cc1_fader)` for the buttons to drive the motor,
+and **Fader position** to the same variable for the readout to follow your hand.
+
 ## LEDs
 
 15 of the 17 buttons have an LED; the pair beside the screen has none in hardware.
