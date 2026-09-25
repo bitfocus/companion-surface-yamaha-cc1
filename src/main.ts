@@ -543,6 +543,19 @@ class CC1Surface implements SurfaceInstance {
 		if (event.type === 'encoder') {
 			const controlId = ENC_TO_CONTROL.get(event.id)
 			if (!controlId) return
+			// The jog wheel reports multi-tick deltas (up to +/-4 on a fast spin).
+			//
+			// rotateById takes a signed delta in one call and arrived in @companion-surface/base
+			// 1.4.0. SurfaceContext is a pure interface — its context.js is `export {}` — so the
+			// object is built by the HOST, and whether the method exists depends on the Companion
+			// running us, not on the version we compile against. Detecting it keeps one call per
+			// event on 5.1+ while still working on hosts that predate it, without raising the
+			// manifest's apiVersion and dropping those hosts.
+			const ctx = this.#context as SurfaceContext & { rotateById?: (controlId: string, delta: number) => void }
+			if (typeof ctx.rotateById === 'function') {
+				ctx.rotateById(controlId, event.delta)
+				return
+			}
 			for (let i = 0; i < Math.abs(event.delta); i++) {
 				if (event.delta > 0) this.#context.rotateRightById(controlId)
 				else this.#context.rotateLeftById(controlId)
