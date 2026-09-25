@@ -6,8 +6,8 @@ import assert from 'node:assert/strict'
 import {
 	HANDSHAKE, buildMessage, parseMessage, pcpWrap, pcpUnwrap, frameEncode, frameSplit,
 	decodeInput, buildFaderPosition, buildLed, buildLcdTile, rgb565,
-	lcdKeySwitchId, lcdSwitchIdToKey, lcdKeyRect, panelSwitchToKey, panelEncoderToKey,
-	buildInitSequence, buildLcdCommit, ledColourFor, LED_COLOURS,
+	lcdKeySwitchId, lcdSwitchIdToKey, lcdKeyRect,
+	buildLcdBacklight, buildPostHandshakeInit, buildLcdCommit, ledColourFor, LED_COLOURS,
 	OP_SWITCH, OP_ENCODER, OP_FADER, OP_LCD,
 } from './cc1-proto.js'
 
@@ -98,11 +98,15 @@ assert.deepEqual(lcdKeyRect(11), { x0: 393, y0: 194, w: 72, h: 72 })
 // Panel mode (0x0104) re-inits the display, so a backlight sent before it is undone —
 // the screen stays dark with content painted into it. driver/cc1_satellite.py sends
 // 0x0204 -> 0x0104 -> 0x0082, which is the order proven on the hardware.
-const init = buildInitSequence()
+const init = [HANDSHAKE, ...buildPostHandshakeInit()]
 assert.equal(init[0].toString('hex'), 'c0060000000000000000c1', 'handshake first')
 assert.equal(init[1].toString('hex'), 'c0070002000100040200f7c1', '0x0204 fader touch mode (matches capture)')
 assert.equal(init[3].toString('hex'), 'c0080001000300820000aeccc1', '0x0082 backlight (matches capture)')
 assert.equal(init.length, 4, 'handshake + 3 setup frames')
+// Regression: buildLcdBacklight takes (level, routing, seq) like every other builder.
+// It once took (level, seq, routing); swapping two valid values yields a well-formed
+// frame that buildMessage's routing guard cannot reject, so pin the bytes here.
+assert.equal(buildLcdBacklight(0xae, 1, 3).toString('hex'), 'c0080001000300820000aeccc1', 'backlight (level, routing, seq)')
 
 const initOps = init.map((f) => pcpUnwrap(frameSplit(f).frames[0]).payload.readUInt16LE(4))
 assert.deepEqual(initOps, [0x0000, 0x0204, 0x0104, 0x0082], 'backlight is the last frame sent')
@@ -121,14 +125,6 @@ assert.equal(tile.readUInt16LE(4), OP_LCD)
 assert.deepEqual(tile.subarray(6, 16), Buffer.from([0, 0, 15, 0, 3, 0, 16, 0, 4, 0]), 'inclusive x1/y1')
 assert.equal(tile.length - 16, 2 * 2 * 2, 'RGB565 body is w*h*2 bytes')
 assert.throws(() => buildLcdTile(0, 0, 2, 2, Buffer.alloc(3)), /need 12 bytes/, 'rejects short pixel buffer')
-
-// 10. Panel map: encoder clicks fold onto their encoder key; buttons follow after.
-assert.deepEqual([12, 13, 17].map(panelSwitchToKey), [0, 1, 5], 'encoder push-click -> encoder key')
-assert.equal(panelSwitchToKey(0), 6, 'first plain button lands after the 6 encoders')
-assert.equal(panelSwitchToKey(34), 22, 'last plain button')
-assert.equal(panelSwitchToKey(99), null)
-assert.equal(panelEncoderToKey(5), 5)
-assert.equal(panelEncoderToKey(6), null)
 
 // 11. Pacing guard: every LCD tile frame — including the small 40x20 clear tiles —
 // must exceed the module's pace threshold (1024B). An unpaced tile flood stalls the

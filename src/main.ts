@@ -22,7 +22,7 @@ import {
 	PANEL_BUTTON_LABELS, PANEL_BUTTON_SWITCH_IDS, PANEL_ENCODER_IDS,
 	HANDSHAKE, buildFaderPosition, buildLcdBacklight, buildMessage, buildLcdCommit, buildLcdTile, buildLed,
 	buildLedBrightnessAll, buildPostHandshakeInit, isDeviceInfoResp, ledColourFor,
-	decodeInput, frameSplit, lcdKeyRect, lcdSwitchIdToKey, panelEncoderClickSwitch, parseMessage, pcpUnwrap,
+	decodeInput, frameSplit, lcdKeyRect, panelEncoderClickSwitch, parseMessage, pcpUnwrap,
 } from './cc1-proto.js'
 
 const VENDOR_ID = 0x0499
@@ -357,7 +357,7 @@ class CC1Surface implements SurfaceInstance {
 		// right after init) go black while standalone sessions (which never do) worked.
 		const level = Math.round((Math.max(0, Math.min(100, percent)) / 100) * 0xae)
 		this.#write(buildLedBrightnessAll(level, 15, 1, this.#nextSeq()))
-		this.#write(buildLcdBacklight(level, this.#nextSeq()))
+		this.#write(buildLcdBacklight(level, 1, this.#nextSeq()))
 	}
 
 	async blank(): Promise<void> {

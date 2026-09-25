@@ -285,8 +285,14 @@ export const OP_FADER_TOUCH_MODE = 0x0204
 export const OP_LCD_BACKLIGHT = 0x0082
 export const OP_PANEL_MODE = 0x0104
 
-/** LCD backlight level. Without this the panel stays dark however much you paint. */
-export function buildLcdBacklight(level = 0xae, seq = 0, routing = 1): Buffer {
+/**
+ * LCD backlight level. Without this the panel stays dark however much you paint.
+ *
+ * Argument order matches every other builder here — (…, routing, seq). It used to take
+ * them the other way round, which buildMessage's routing guard cannot catch: swapping
+ * a valid routing and a valid seq produces a frame that is well-formed and wrong.
+ */
+export function buildLcdBacklight(level = 0xae, routing = 1, seq = 0): Buffer {
 	return buildMessage(OP_LCD_BACKLIGHT, Buffer.from([0x00, level & 0xff]), routing, seq)
 }
 
@@ -305,17 +311,8 @@ export function buildPostHandshakeInit(backlight = 0xae): Buffer[] {
 		// Backlight LAST. Panel mode (0x0104) appears to re-init the display, so sending
 		// it after 0x0082 leaves the screen dark with content painted into it — exactly
 		// the order driver/cc1_satellite.py uses, and the order proven on the hardware.
-		buildLcdBacklight(backlight, 3),
+		buildLcdBacklight(backlight, 1, 3),
 	]
-}
-
-/**
- * The full startup sequence ControlCenter sends, in its order and with its sequence
- * numbers — see the first five outbound lines of tools/re/captures/init_sequence.txt.
- * Callers must still pause between element 0 (the handshake) and the rest.
- */
-export function buildInitSequence(backlight = 0xae): Buffer[] {
-	return [HANDSHAKE, ...buildPostHandshakeInit(backlight)]
 }
 
 /** True if this is the device's reply to the handshake (DeviceInfoResp). */
@@ -362,9 +359,6 @@ export function lcdKeyRect(keyIndex: number): { x0: number; y0: number; w: numbe
 // 17 plain buttons: the Switch ids below (device labels "1-2, 15-29").
 export const PANEL_ENCODER_IDS = [0, 1, 2, 3, 4, 5]
 export const PANEL_BUTTON_SWITCH_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 18, 19, 20, 33, 34]
-export const PANEL_KEYS_PER_ROW = 6
-export const PANEL_FADER_KEY = PANEL_ENCODER_IDS.length + PANEL_BUTTON_SWITCH_IDS.length // 23
-export const PANEL_KEYS_TOTAL = PANEL_FADER_KEY + 1 // 24 (incl. fader)
 
 /** The device's own physical button numbers (from the button map), by Switch id. */
 export const PANEL_BUTTON_LABELS: Record<number, string> = {
@@ -374,16 +368,4 @@ export const PANEL_BUTTON_LABELS: Record<number, string> = {
 
 export function panelEncoderClickSwitch(eid: number): number {
 	return 12 + eid
-}
-
-/** Physical Switch id -> panel surface key index, or null if not a panel button. */
-export function panelSwitchToKey(sid: number): number | null {
-	if (sid >= 12 && sid <= 17) return sid - 12 // encoder push-click -> its encoder key 0..5
-	const idx = PANEL_BUTTON_SWITCH_IDS.indexOf(sid)
-	return idx === -1 ? null : PANEL_ENCODER_IDS.length + idx
-}
-
-/** Encoder id -> panel surface key index (encoder keys are 0..5). */
-export function panelEncoderToKey(eid: number): number | null {
-	return PANEL_ENCODER_IDS.includes(eid) ? eid : null
 }
