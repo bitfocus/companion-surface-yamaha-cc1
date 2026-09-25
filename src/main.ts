@@ -18,11 +18,32 @@ import {
 	type SurfaceSchemaLayoutDefinition,
 } from '@companion-surface/base'
 import {
-	FADER_MAX, LCD_H, LCD_KEYS, LCD_KEY_H, LCD_KEY_W, LCD_W,
-	PANEL_BUTTON_LABELS, PANEL_BUTTON_SWITCH_IDS, PANEL_ENCODER_IDS,
-	HANDSHAKE, buildFaderPosition, buildLcdBacklight, buildMessage, buildLcdCommit, buildLcdTile, buildLed,
-	buildLedBrightnessAll, buildPostHandshakeInit, isDeviceInfoResp, ledColourFor,
-	decodeInput, frameSplit, lcdKeyRect, panelEncoderClickSwitch, parseMessage, pcpUnwrap,
+	FADER_MAX,
+	LCD_H,
+	LCD_KEYS,
+	LCD_KEY_H,
+	LCD_KEY_W,
+	LCD_W,
+	PANEL_BUTTON_LABELS,
+	PANEL_BUTTON_SWITCH_IDS,
+	PANEL_ENCODER_IDS,
+	HANDSHAKE,
+	buildFaderPosition,
+	buildLcdBacklight,
+	buildMessage,
+	buildLcdCommit,
+	buildLcdTile,
+	buildLed,
+	buildLedBrightnessAll,
+	buildPostHandshakeInit,
+	isDeviceInfoResp,
+	ledColourFor,
+	decodeInput,
+	frameSplit,
+	lcdKeyRect,
+	panelEncoderClickSwitch,
+	parseMessage,
+	pcpUnwrap,
 } from './cc1-proto.js'
 
 const VENDOR_ID = 0x0499
@@ -73,7 +94,7 @@ const ENCODER_CONTROL_IDS = [...ENC_TO_CONTROL.values()]
 // Grid order follows the panel's printed labels (1,2,15..29), so row 4 col 0 is the
 // button marked "1" — not the internal switch-id order, which is scrambled physically.
 const BUTTON_SIDS_BY_LABEL = [...PANEL_BUTTON_SWITCH_IDS].sort(
-	(a, b) => Number(PANEL_BUTTON_LABELS[a]) - Number(PANEL_BUTTON_LABELS[b])
+	(a, b) => Number(PANEL_BUTTON_LABELS[a]) - Number(PANEL_BUTTON_LABELS[b]),
 )
 const BUTTON_CONTROL_IDS = BUTTON_SIDS_BY_LABEL.map((_sid, i) => `${4 + Math.floor(i / 6)}/${i % 6}`)
 const FADER_CONTROL_ID = '6/5'
@@ -106,8 +127,21 @@ const CONTROL_TO_LCD_KEY = new Map(LCD_CONTROL_IDS.map((id, k) => [id, k]))
  * (The R, W and D-shaped keys do light: they are switches 8, 6 and 3 respectively.)
  */
 const SWITCH_TO_LED: Record<number, number> = {
-	7: 0x00, 10: 0x01, 9: 0x02, 11: 0x03, 18: 0x04, 19: 0x05, 20: 0x06, 0: 0x07,
-	1: 0x08, 2: 0x09, 3: 0x0a, 4: 0x0b, 5: 0x0c, 6: 0x0d, 8: 0x0e,
+	7: 0x00,
+	10: 0x01,
+	9: 0x02,
+	11: 0x03,
+	18: 0x04,
+	19: 0x05,
+	20: 0x06,
+	0: 0x07,
+	1: 0x08,
+	2: 0x09,
+	3: 0x0a,
+	4: 0x0b,
+	5: 0x0c,
+	6: 0x0d,
+	8: 0x0e,
 }
 const CONTROL_TO_LED = new Map<string, number>()
 BUTTON_SIDS_BY_LABEL.forEach((sid, i) => {
@@ -201,8 +235,8 @@ class CC1Surface implements SurfaceInstance {
 				if (err)
 					reject(
 						new Error(
-							`Failed to open ${this.#path}: ${err.message}. Is ControlCenter, the Stream Deck app, or another copy of this driver running?`
-						)
+							`Failed to open ${this.#path}: ${err.message}. Is ControlCenter, the Stream Deck app, or another copy of this driver running?`,
+						),
 					)
 				else resolve(port)
 			})
@@ -215,8 +249,8 @@ class CC1Surface implements SurfaceInstance {
 				reject(
 					new Error(
 						`Timed out opening ${this.#path}. Either another process holds it (ControlCenter / Stream Deck / another copy of this driver), ` +
-							`or the device is wedged — repeated rapid reconnects can leave the CDC driver in an uninterruptible state. Unplug the CC1 and plug it back in.`
-					)
+							`or the device is wedged — repeated rapid reconnects can leave the CDC driver in an uninterruptible state. Unplug the CC1 and plug it back in.`,
+					),
 				)
 			}, OPEN_TIMEOUT_MS)
 		})
@@ -244,7 +278,7 @@ class CC1Surface implements SurfaceInstance {
 			// panel will paint and every button, encoder and fader move will be dead.
 			this.#logger.warn(
 				`no handshake reply from ${this.#path} within ${HANDSHAKE_TIMEOUT_MS}ms — the device is not sending to us. ` +
-					'The display may still work while all input stays dead.'
+					'The display may still work while all input stays dead.',
 			)
 		}
 		// The device answers the handshake within ~2ms but is not ready for config yet —
@@ -261,7 +295,10 @@ class CC1Surface implements SurfaceInstance {
 		await new Promise((r) => setTimeout(r, INIT_SETTLE_MS))
 		this.#clearScreen()
 		await this.#flush(3000) // the queued clear is ~170 paced frames; hand them over before ready
-		this.#keepalive = setInterval(() => this.#write(buildMessage(0x0000, Buffer.alloc(0), 4, this.#nextSeq())), KEEPALIVE_MS)
+		this.#keepalive = setInterval(
+			() => this.#write(buildMessage(0x0000, Buffer.alloc(0), 4, this.#nextSeq())),
+			KEEPALIVE_MS,
+		)
 		// Self-healing: keepalives are never ACKed but paints always are. If tiles have
 		// gone out since we last heard anything and the silence has lasted, the device
 		// session has stalled — hand back to the host, which reopens and re-inits us.
@@ -425,7 +462,7 @@ class CC1Surface implements SurfaceInstance {
 	}
 
 	#write(frame: Buffer): void {
-		this.#txChain = this.#txChain.then(() => this.#send(frame)).catch(() => undefined)
+		this.#txChain = this.#txChain.then(async () => this.#send(frame)).catch(() => undefined)
 	}
 
 	async #send(frame: Buffer): Promise<void> {
@@ -517,8 +554,13 @@ class CC1Surface implements SurfaceInstance {
 		// Debug-level tracing of every input — turn on the module's debug logging to
 		// watch presses decode live (this is how the panel mapping was verified).
 		if (event.type === 'switch')
-			this.#logger.debug(`input: switch ${event.id}${PANEL_BUTTON_LABELS[event.id] ? ` (btn ${PANEL_BUTTON_LABELS[event.id]})` : ''} ${event.pressed ? 'down' : 'up'} -> ${SWITCH_TO_CONTROL.get(event.id) ?? 'unmapped'}`)
-		else if (event.type === 'encoder') this.#logger.debug(`input: encoder ${event.id} delta=${event.delta} -> ${ENC_TO_CONTROL.get(event.id) ?? 'unmapped'}`)
+			this.#logger.debug(
+				`input: switch ${event.id}${PANEL_BUTTON_LABELS[event.id] ? ` (btn ${PANEL_BUTTON_LABELS[event.id]})` : ''} ${event.pressed ? 'down' : 'up'} -> ${SWITCH_TO_CONTROL.get(event.id) ?? 'unmapped'}`,
+			)
+		else if (event.type === 'encoder')
+			this.#logger.debug(
+				`input: encoder ${event.id} delta=${event.delta} -> ${ENC_TO_CONTROL.get(event.id) ?? 'unmapped'}`,
+			)
 		else if (event.touched !== this.#faderTouched || Date.now() - this.#faderLogAt > 500) {
 			this.#faderLogAt = Date.now()
 			this.#logger.debug(`input: fader pos=${event.position} touched=${event.touched}`)
@@ -622,7 +664,7 @@ const plugin: SurfacePlugin<CC1Info> = {
 		// Companion hot-reloads dev modules and terminates the process shortly after
 		// this resolves. Release every port here — a surface left open keeps the fd
 		// and the replacement process cannot open the device.
-		await Promise.allSettled([...openSurfaces].map((s) => s.close()))
+		await Promise.allSettled([...openSurfaces].map(async (s) => s.close()))
 		openSurfaces.clear()
 	},
 
@@ -647,21 +689,39 @@ const plugin: SurfacePlugin<CC1Info> = {
 				brightness: true,
 				surfaceLayout: buildLayout(),
 				transferVariables: [
-					{ id: 'faderPosition', type: 'input', name: 'Fader position', description: 'Fader position, 0-100 in 0.1 steps (the fader is 10-bit)' },
-					{ id: 'faderMotor', type: 'output', name: 'Motor fader target', description: 'Expression (0-100, decimals allowed) driving the motorised fader' },
+					{
+						id: 'faderPosition',
+						type: 'input',
+						name: 'Fader position',
+						description: 'Fader position, 0-100 in 0.1 steps (the fader is 10-bit)',
+					},
+					{
+						id: 'faderMotor',
+						type: 'output',
+						name: 'Motor fader target',
+						description: 'Expression (0-100, decimals allowed) driving the motorised fader',
+					},
 				],
 				// Only the LCD keys have a display, so pincode entry lives there.
 				pincodeMap: {
 					type: 'single-page',
 					pincode: LCD_CONTROL_IDS[0],
 					0: LCD_CONTROL_IDS[10],
-					1: LCD_CONTROL_IDS[1], 2: LCD_CONTROL_IDS[2], 3: LCD_CONTROL_IDS[3],
-					4: LCD_CONTROL_IDS[4], 5: LCD_CONTROL_IDS[5], 6: LCD_CONTROL_IDS[6],
-					7: LCD_CONTROL_IDS[7], 8: LCD_CONTROL_IDS[8], 9: LCD_CONTROL_IDS[9],
+					1: LCD_CONTROL_IDS[1],
+					2: LCD_CONTROL_IDS[2],
+					3: LCD_CONTROL_IDS[3],
+					4: LCD_CONTROL_IDS[4],
+					5: LCD_CONTROL_IDS[5],
+					6: LCD_CONTROL_IDS[6],
+					7: LCD_CONTROL_IDS[7],
+					8: LCD_CONTROL_IDS[8],
+					9: LCD_CONTROL_IDS[9],
 				},
 				location: pluginInfo.path,
 				configFields: null,
-				canChangePage: { label: `Buttons ${PANEL_BUTTON_LABELS[PAGE_PREV_SWITCH]} / ${PANEL_BUTTON_LABELS[PAGE_NEXT_SWITCH]} change page` },
+				canChangePage: {
+					label: `Buttons ${PANEL_BUTTON_LABELS[PAGE_PREV_SWITCH]} / ${PANEL_BUTTON_LABELS[PAGE_NEXT_SWITCH]} change page`,
+				},
 			},
 		}
 	},

@@ -15,7 +15,7 @@ assert.equal(plugin.checkSupportsHidDevice, undefined, 'this is a serial plugin,
 
 // openSurface only constructs — init() is what opens the port — so this is safe without hardware.
 const ctx = new Proxy({}, { get: () => () => undefined }) as any
-const { surface, registerProps } = await plugin.openSurface!('TEST', { path: '/dev/null' }, ctx)
+const { surface, registerProps } = await plugin.openSurface('TEST', { path: '/dev/null' }, ctx)
 
 assert.equal(surface.surfaceId, 'TEST')
 assert.equal(surface.productName, 'Yamaha CC121MK2')
@@ -32,13 +32,15 @@ for (const [id, spec] of Object.entries(controls)) {
 assert.equal(
 	new Set(Object.values(controls).map((c) => `${c.row}/${c.column}`)).size,
 	ids.length,
-	'no two controls share a grid cell'
+	'no two controls share a grid cell',
 )
 
 // Exactly the 12 LCD keys request bitmaps; every referenced preset exists.
 const presets = registerProps.surfaceLayout.stylePresets
 assert.ok(presets.default, 'schema requires a default preset')
-const lcdIds = Object.entries(controls).filter(([, c]) => c.stylePreset === 'lcd').map(([id]) => id)
+const lcdIds = Object.entries(controls)
+	.filter(([, c]) => c.stylePreset === 'lcd')
+	.map(([id]) => id)
 assert.equal(lcdIds.length, 12, '12 bitmap controls')
 assert.deepEqual(presets.lcd.bitmap, { w: 72, h: 72, format: 'rgb' })
 for (const c of Object.values(controls)) if (c.stylePreset) assert.ok(presets[c.stylePreset], 'preset exists')
@@ -54,10 +56,10 @@ for (const id of pinIds) {
 }
 
 // One variable produced by the surface, one consumed by it.
-assert.deepEqual(
-	registerProps.transferVariables!.map((v) => `${v.id}:${v.type}`).sort(),
-	['faderMotor:output', 'faderPosition:input']
-)
+assert.deepEqual(registerProps.transferVariables!.map((v) => `${v.id}:${v.type}`).sort(), [
+	'faderMotor:output',
+	'faderPosition:input',
+])
 
 // Motor drive must tolerate junk and a closed port without throwing.
 surface.onVariableValue!('faderMotor', 50)

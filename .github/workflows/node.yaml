@@ -1,0 +1,64 @@
+name: Node CI
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use Node.js 22.x
+        # Matches the runtime declared in companion/manifest.json
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+      - name: Prepare environment
+        run: corepack enable
+      - name: Install
+        run: yarn install
+        env:
+          CI: true
+      - name: Build and check types
+        run: yarn build
+        env:
+          CI: true
+      - name: Lint
+        run: yarn lint
+        env:
+          CI: true
+
+  test:
+    name: Self-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+      - name: Prepare environment
+        run: corepack enable
+      - name: Install
+        run: yarn install
+        env:
+          CI: true
+      - name: Build
+        run: yarn build
+        env:
+          CI: true
+      # Codec checks are anchored on bytes from a real USB capture of Yamaha
+      # ControlCenter, so a protocol regression fails here rather than on the desk.
+      - name: Run self-checks
+        run: yarn test
+        env:
+          CI: true

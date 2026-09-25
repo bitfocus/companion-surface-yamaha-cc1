@@ -92,7 +92,8 @@ export function pcpUnwrap(frame: Uint8Array): { payload: Buffer; ok: boolean } {
 export function buildMessage(opcode: number, data: Uint8Array = Buffer.alloc(0), routing = 1, seq = 0): Buffer {
 	// Only channels 0/1/2/4 exist. Catches the routing/seq argument-order footgun that
 	// once sent every draw's LCD commit to routing≈seq — invisible content, mute device.
-	if (![0, 1, 2, 4].includes(routing & 0x7fff)) throw new Error(`buildMessage: invalid routing ${routing} (seq passed as routing?)`)
+	if (![0, 1, 2, 4].includes(routing & 0x7fff))
+		throw new Error(`buildMessage: invalid routing ${routing} (seq passed as routing?)`)
 	const payload = Buffer.concat([le16(routing), le16(seq), le16(opcode), Buffer.from(data)])
 	return frameEncode(pcpWrap(payload))
 }
@@ -260,7 +261,15 @@ export function rgb565(r: number, g: number, b: number): number {
  * Paint a w*h region at (x0,y0). `rgb` is row-major RGB triplets (w*h*3 bytes) —
  * the exact shape Companion hands over as SurfaceDrawProps.image with format 'rgb'.
  */
-export function buildLcdTile(x0: number, y0: number, w: number, h: number, rgb: Uint8Array, routing = 1, seq = 0): Buffer {
+export function buildLcdTile(
+	x0: number,
+	y0: number,
+	w: number,
+	h: number,
+	rgb: Uint8Array,
+	routing = 1,
+	seq = 0,
+): Buffer {
 	const px = w * h
 	if (rgb.length < px * 3) throw new Error(`buildLcdTile: need ${px * 3} bytes for ${w}x${h}, got ${rgb.length}`)
 	const body = Buffer.alloc(px * 2)
@@ -362,8 +371,23 @@ export const PANEL_BUTTON_SWITCH_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 18
 
 /** The device's own physical button numbers (from the button map), by Switch id. */
 export const PANEL_BUTTON_LABELS: Record<number, string> = {
-	33: '1', 34: '2', 11: '15', 20: '16', 19: '17', 9: '18', 10: '19', 7: '20',
-	8: '21', 6: '22', 5: '23', 4: '24', 18: '25', 3: '26', 2: '27', 1: '28', 0: '29',
+	33: '1',
+	34: '2',
+	11: '15',
+	20: '16',
+	19: '17',
+	9: '18',
+	10: '19',
+	7: '20',
+	8: '21',
+	6: '22',
+	5: '23',
+	4: '24',
+	18: '25',
+	3: '26',
+	2: '27',
+	1: '28',
+	0: '29',
 }
 
 export function panelEncoderClickSwitch(eid: number): number {

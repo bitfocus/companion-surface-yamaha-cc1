@@ -4,11 +4,30 @@
  */
 import assert from 'node:assert/strict'
 import {
-	HANDSHAKE, buildMessage, parseMessage, pcpWrap, pcpUnwrap, frameEncode, frameSplit,
-	decodeInput, buildFaderPosition, buildLed, buildLcdTile, rgb565,
-	lcdKeySwitchId, lcdSwitchIdToKey, lcdKeyRect,
-	buildLcdBacklight, buildPostHandshakeInit, buildLcdCommit, ledColourFor, LED_COLOURS,
-	OP_SWITCH, OP_ENCODER, OP_FADER, OP_LCD,
+	HANDSHAKE,
+	buildMessage,
+	parseMessage,
+	pcpWrap,
+	pcpUnwrap,
+	frameEncode,
+	frameSplit,
+	decodeInput,
+	buildFaderPosition,
+	buildLed,
+	buildLcdTile,
+	rgb565,
+	lcdKeySwitchId,
+	lcdSwitchIdToKey,
+	lcdKeyRect,
+	buildLcdBacklight,
+	buildPostHandshakeInit,
+	buildLcdCommit,
+	ledColourFor,
+	LED_COLOURS,
+	OP_SWITCH,
+	OP_ENCODER,
+	OP_FADER,
+	OP_LCD,
 } from './cc1-proto.js'
 
 // 1. The wake-up frame must match the capture byte-for-byte.
@@ -38,19 +57,38 @@ const second = frameSplit(Buffer.concat([first.rest, wire.subarray(wire.length -
 assert.equal(second.frames.length, 1, 'tail carried over completes the second frame')
 
 // 5. Input decode, including the signed encoder delta and the fader touch bit.
-const sw = decodeInput(parseMessage(pcpUnwrap(frameSplit(buildMessage(OP_SWITCH | 0x8000, Buffer.from([21, 1]), 0x8001)).frames[0]).payload)!)
+const sw = decodeInput(
+	parseMessage(
+		pcpUnwrap(frameSplit(buildMessage(OP_SWITCH | 0x8000, Buffer.from([21, 1]), 0x8001)).frames[0]).payload,
+	)!,
+)
 assert.deepEqual(sw, { type: 'switch', id: 21, pressed: true })
 
 const enc = decodeInput({ routing: 0x8001, seq: 0, opcode: OP_ENCODER | 0x8000, data: Buffer.from([3, 0xff]) })
 assert.deepEqual(enc, { type: 'encoder', id: 3, delta: -1 }, 'CCW decodes as -1')
 
-const fad = decodeInput({ routing: 0x8001, seq: 0, opcode: OP_FADER | 0x8000, data: Buffer.from([0x00, 0xff, 0x03, 0x80]) })
+const fad = decodeInput({
+	routing: 0x8001,
+	seq: 0,
+	opcode: OP_FADER | 0x8000,
+	data: Buffer.from([0x00, 0xff, 0x03, 0x80]),
+})
 assert.deepEqual(fad, { type: 'fader', position: 1023, touched: true }, 'fader at max, touched')
 
 // 5b. The fader is 10-bit: full scale must decode as 1023, and the high byte's spare
 // bits must not leak into the reading.
-assert.equal(decodeInput({ routing: 0x8001, seq: 0, opcode: OP_FADER | 0x8000, data: Buffer.from([0x00, 0xff, 0xff, 0x00]) })!.position, 1023, 'upper bits masked to 10 bits')
-assert.equal(decodeInput({ routing: 0x8001, seq: 0, opcode: OP_FADER | 0x8000, data: Buffer.from([0x00, 0x00, 0x02, 0x00]) })!.position, 512, 'mid scale')
+assert.equal(
+	decodeInput({ routing: 0x8001, seq: 0, opcode: OP_FADER | 0x8000, data: Buffer.from([0x00, 0xff, 0xff, 0x00]) })!
+		.position,
+	1023,
+	'upper bits masked to 10 bits',
+)
+assert.equal(
+	decodeInput({ routing: 0x8001, seq: 0, opcode: OP_FADER | 0x8000, data: Buffer.from([0x00, 0x00, 0x02, 0x00]) })!
+		.position,
+	512,
+	'mid scale',
+)
 
 // 6. Motor fader layout is [00][flag][lo][hi] — the [00][lo][hi][x] variant was wrong.
 const fpos = pcpUnwrap(frameSplit(buildFaderPosition(1023)).frames[0]).payload
@@ -60,10 +98,18 @@ assert.deepEqual(fpos.subarray(6), Buffer.from([0x00, 0x01, 0xff, 0x03]), 'Fader
 // d=020101 lit the LED; live probe confirmed a repeated single id lights that LED).
 const led = pcpUnwrap(frameSplit(buildLed(0x02, true)).frames[0]).payload
 assert.deepEqual(led.subarray(4), Buffer.from([0x81, 0x03, 0x02, 0x01, 0x01]), 'opcode 0x0381 + [id][colour][on]')
-assert.deepEqual(pcpUnwrap(frameSplit(buildLed(0x02, false)).frames[0]).payload.subarray(4), Buffer.from([0x81, 0x03, 0x02, 0x01, 0x00]), 'off form')
+assert.deepEqual(
+	pcpUnwrap(frameSplit(buildLed(0x02, false)).frames[0]).payload.subarray(4),
+	Buffer.from([0x81, 0x03, 0x02, 0x01, 0x00]),
+	'off form',
+)
 // The colour byte must never carry the led id: ids >= 0x0a are invalid colours and
 // the LED silently stays dark — that bug hid three LEDs through two correlation runs.
-assert.equal(pcpUnwrap(frameSplit(buildLed(0x0c, true)).frames[0]).payload[7], 0x01, 'high ids still get a valid colour')
+assert.equal(
+	pcpUnwrap(frameSplit(buildLed(0x0c, true)).frames[0]).payload[7],
+	0x01,
+	'high ids still get a valid colour',
+)
 
 // 7b. Colour matching — palette named on hardware; values >= 10 leave the LED dark, so
 // the matcher must only ever return one of the ten valid values.
@@ -77,15 +123,28 @@ assert.equal(ledColourFor(0, 255, 255), 4, 'cyan picks sky blue')
 assert.equal(ledColourFor(0, 0, 0), null, 'black leaves the LED off')
 assert.equal(ledColourFor(64, 0, 0), 6, 'a dim red is still red, not off')
 assert.equal(ledColourFor(120, 120, 120), 9, 'grey reads as white')
-for (const c of [[12, 34, 56], [200, 30, 90], [1, 250, 100], [255, 200, 40]]) {
+for (const c of [
+	[12, 34, 56],
+	[200, 30, 90],
+	[1, 250, 100],
+	[255, 200, 40],
+]) {
 	const v = ledColourFor(c[0], c[1], c[2])
 	assert.ok(v !== null && v >= 0 && v <= 9, `colour ${v} is a valid palette value`)
 }
 assert.equal(LED_COLOURS.length, 10, 'ten colours, values 0..9')
-assert.deepEqual(LED_COLOURS.map((c) => c.value), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 'contiguous values')
+assert.deepEqual(
+	LED_COLOURS.map((c) => c.value),
+	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+	'contiguous values',
+)
 
 // 8. LCD key grid: verified press order was top row 21,24,27,30 (column-major ids).
-assert.deepEqual([0, 1, 2, 3].map((c) => lcdKeySwitchId(0, c)), [21, 24, 27, 30], 'top row switch ids')
+assert.deepEqual(
+	[0, 1, 2, 3].map((c) => lcdKeySwitchId(0, c)),
+	[21, 24, 27, 30],
+	'top row switch ids',
+)
 assert.deepEqual([21, 24, 27, 30].map(lcdSwitchIdToKey), [0, 1, 2, 3], 'top row -> keys 0..3')
 assert.deepEqual([22, 25, 28, 31].map(lcdSwitchIdToKey), [4, 5, 6, 7], 'middle row -> keys 4..7')
 assert.deepEqual([23, 26, 29, 32].map(lcdSwitchIdToKey), [8, 9, 10, 11], 'bottom row -> keys 8..11')
@@ -106,7 +165,11 @@ assert.equal(init.length, 4, 'handshake + 3 setup frames')
 // Regression: buildLcdBacklight takes (level, routing, seq) like every other builder.
 // It once took (level, seq, routing); swapping two valid values yields a well-formed
 // frame that buildMessage's routing guard cannot reject, so pin the bytes here.
-assert.equal(buildLcdBacklight(0xae, 1, 3).toString('hex'), 'c0080001000300820000aeccc1', 'backlight (level, routing, seq)')
+assert.equal(
+	buildLcdBacklight(0xae, 1, 3).toString('hex'),
+	'c0080001000300820000aeccc1',
+	'backlight (level, routing, seq)',
+)
 
 const initOps = init.map((f) => pcpUnwrap(frameSplit(f).frames[0]).payload.readUInt16LE(4))
 assert.deepEqual(initOps, [0x0000, 0x0204, 0x0104, 0x0082], 'backlight is the last frame sent')
